@@ -1,0 +1,20 @@
+{
+  "name": "user-task",
+  "version": "1.0.0",
+  "description": "sample crud",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "barath",
+  "license": "ISC",
+  "dependencies": {
+    "atob": "^2.1.2",
+    "btoa": "^1.2.1",
+    "express": "^4.17.1",
+    "express-bearer-token": "^2.4.0",
+    "fs": "0.0.1-security",
+    "jsonwebtoken": "^8.5.1",
+    "multer": "^1.4.4"
+  }
+}

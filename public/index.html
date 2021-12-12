@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Login</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <script src="http://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+  <style>
+    .center {
+      margin: auto;
+      width: 60%;
+      border: 3px;
+      padding: 10px;
+    }
+
+    button.c {
+      position: absolute;
+      right: 150px;
+    }
+  </style>
+</head>
+
+<body>
+  <input type="hidden" id="keytoken" />
+
+
+  <div id="linkbuttondiv" style="display: none;">
+    <a id="home" href="#home">home</a>
+    <a id="profile" href="#profile">profile</a>
+    <button class="c" id="logout">logout</button>
+   
+  </div>
+
+  <div id="homediv" style="display: none;">
+    <p id="lstatus">welcome Home</p>
+  </div>
+
+  <div id="profilediv" style="display: none; padding: auto; margin-top: 20px;">
+    <form action="/user/me/avatar" id="myForm" method="POST" enctype="multipart/form-data">
+      <input type="file" name="avatar" />
+      <input type='submit' value='Upload'>
+    </form>
+    
+    <table>
+      <tr>
+        <td>
+          <img id="avatar" width="100px" height="100px" />
+        </td>
+      
+       </tr>
+     
+      <tr>
+        <td>
+          <label>UserName:</label> <label id="usernameval"></label>
+        </td>
+      
+      </tr>
+      <tr>
+        <td>
+          <label>Age:</label> <label id="ageval"></label>
+        </td>
+      
+      </tr>
+     
+    </table>
+   
+    <div style="margin: 200px;" id="upresponse">
+
+    </div>
+  </div>
+
+  <div id="logindiv" style="margin-top: 100px;" class="center">
+
+    <p style="text-align: center;" class="center">Login:</p>
+    <form id="lform" action="/user/login">
+      UserName: <input type="text" name="username" value="muh.nurali43@gmail.com" />
+      Password: <input type="text" name="password" value="12345678" />
+      <input type="button" name="login" value="login" id="login" />
+    </form>
+  </div>
+
+
+  <script type="application/javascript">
+
+    links = ["profile", "home","login"]
+
+    $("#linkbuttondiv").on('click','a', function (e) {
+      links.forEach(element => {
+        if (element == e.currentTarget.id) {
+          $("#" + element  + "div" ).css("display", "block")
+        } else {
+          $("#" + element  + "div" ).css("display", "none")
+        }
+       if(element == "profile"){
+        getLoggedIn()
+       }
+
+      });
+
+    })
+
+    function getLoggedIn(){
+      $.ajax
+        ({
+          type: 'GET',
+          url: '/user/me',
+          dataType: "json",
+          headers: {
+            "Authorization": "Bearer " + getCookie("tokenI")
+          },
+          success: function (response) {
+            console.log(response)
+            $("#usernameval").html(response['name'])
+            $("#ageval").html(response['age'])
+            $("#avatar").attr('src',"/user/"+response['avatar_enc']+"/avatar")
+
+          }, error: function (jqXHR, exception) {
+            console.log(jqXHR)
+          }
+        });
+    }
+
+
+    $("#logout").on('click', function (e) {
+      $.ajax
+        ({
+          type: 'POST',
+          url: '/user/logout',
+          dataType: "json",
+          headers: {
+            "Authorization": "Bearer " + getCookie("tokenI")
+          },
+          success: function (response) {
+            console.log(response)
+            $("#homediv").css("display", "none")
+            $("#linkbuttondiv").css("display", "none")
+            $("#logindiv").css("display", "block")
+            deleteAllCookies()
+
+          }, error: function (jqXHR, exception) {
+            console.log(jqXHR)
+          }
+        });
+    })
+
+    function deleteAllCookies() {
+      var c = document.cookie.split("; ");
+      for (i in c)
+        document.cookie = /^[^=]+/.exec(c[i])[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+
+
+    var lform = $("#lform")
+    $("#login").on('click', (eve) => {
+      const user = {
+        username: $("input[name=\"username\"]").val(),
+        password: $("input[name=\"password\"]").val(),
+      }
+      $.ajax
+        ({
+          type: 'POST',
+          url: lform.attr('action'),
+          data: user,
+          dataType: "json",
+          success: function (response) {
+            console.log(response)
+            $('#keytoken').val(response['tokenI'])
+            $("#logindiv").css("display", "none")
+            $("#homediv").css("display", "block")
+            $("#lstatus").html("login success fully")
+            setCookie('tokenI', response['tokenI'])
+
+          }, error: function (jqXHR, exception) {
+            console.log(jqXHR)
+          }
+        });
+    })
+    var form = $("#myForm");
+    form.submit(function (e) {
+      $.ajax
+        ({
+          type: form.attr('method'),
+          url: form.attr('action'),
+          data: new FormData(this),
+          async: false,
+          processData: false,
+          contentType: false,
+          headers: {
+            "Authorization": "Bearer " + getCookie("tokenI")
+          },
+          success: function (response) {
+            console.log(response)
+            $('#upresponse').empty()
+            $('#upresponse').append(response)
+            $('#myForm').trigger("reset");
+            $('#profile').click()
+          }
+        });
+      e.preventDefault();
+
+
+    });
+
+    function setCookie(cname, cvalue, exdays) {
+      const d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      let expires = "expires=" + d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    function checkCookie() {
+      let user = getCookie("tokenI");
+      if (user != "") {
+        $("#logindiv").css("display", "none")
+        $("#homediv").css("display", "block")
+        $("#linkbuttondiv").css("display", "block")
+      } else {
+        $("#logindiv").css("display", "block")
+
+      }
+    }
+
+    function getCookie(cname) {
+      let name = cname + "=";
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return "";
+    }
+
+    checkCookie()
+
+  </script>
+</body>
+
+</html>
